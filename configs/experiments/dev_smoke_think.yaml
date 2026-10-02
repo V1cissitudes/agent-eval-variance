@@ -1,0 +1,16 @@
+# Development check (not a research experiment): thinking mode on, to measure context needs.
+name: dev_smoke_think
+endpoint: ollama_mac
+model: qwen3-4b
+enable_thinking: true
+eval_set: data/frozen/hotpotqa_distractor_val_300.jsonl
+question_ids: []
+n_questions: 5
+n_repeats: 1
+temperatures: [0.6]
+top_p: 0.95
+top_k: 20
+max_tokens_per_step: 4096
+max_steps: 8
+search_top_k: 2
+seed: 20261001

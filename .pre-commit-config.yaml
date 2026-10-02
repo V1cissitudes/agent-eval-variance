@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: frozen-eval-set-integrity
+        name: frozen eval set matches its manifest
+        entry: uv run --locked pytest -q tests/test_frozen_integrity.py
+        language: system
+        pass_filenames: false
+        always_run: true

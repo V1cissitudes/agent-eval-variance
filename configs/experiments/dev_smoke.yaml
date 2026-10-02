@@ -1,0 +1,16 @@
+# Development smoke test (not a research experiment): a few questions, few repeats.
+name: dev_smoke
+endpoint: ollama_mac
+model: qwen3-4b
+enable_thinking: false
+eval_set: data/frozen/hotpotqa_distractor_val_300.jsonl
+question_ids: []
+n_questions: 5
+n_repeats: 2
+temperatures: [0.7]
+top_p: 1.0
+top_k: null              # null = not sent; server default applies (see docs/agent_design.md)
+max_tokens_per_step: 1024
+max_steps: 8
+search_top_k: 2
+seed: 20261001

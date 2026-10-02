@@ -1,0 +1,19 @@
+# Rehearsal of E00 on Mac Ollama (development only, not research data). Historical rehearsal settings; see E00_pilot for the current formal design.
+# Formal runs use vllm_5070; switch platforms by changing `endpoint` only.
+# PROVISIONAL (2026-10-02, settings not final): n_questions=5 and the explicit top_p/top_k below.
+name: dev_E00_rehearsal
+endpoint: ollama_mac
+model: qwen3-4b
+enable_thinking: false
+eval_set: data/frozen/hotpotqa_distractor_val_300.jsonl
+question_ids: []                  # empty -> first n_questions in frozen (hash) order
+n_questions: 5                    # 1 question gives too little information; the first one has a list-type answer
+n_repeats: 20
+temperatures: [0.0, 0.7]
+prefix_cache: [true, false]       # server-side flag; see scripts/serve_vllm.sh
+max_steps: 8
+top_p: 0.8                        # Qwen3 recommended non-thinking sampling (T=0.7, top_p=0.8, top_k=20);
+top_k: 20                         # sent explicitly so server-side generation_config defaults cannot hide in
+max_tokens_per_step: 1024
+search_top_k: 2
+seed: 20261001

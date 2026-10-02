@@ -1,0 +1,12 @@
+# What to run. The same logical model has a different name on each platform.
+# enable_thinking: default for Qwen3 thinking mode; experiment configs may override it.
+models:
+  qwen3-4b:
+    hf_id: Qwen/Qwen3-4B          # original hybrid model (thinking on/off with the same weights)
+    enable_thinking: false
+    served_names:
+      ollama_mac: qwen3:4b-q4_K_M # NOT `qwen3:4b`, which is Qwen3-4B-Thinking-2507
+      vllm_5070: Qwen/Qwen3-4B
+    precision:
+      ollama_mac: q4_K_M
+      vllm_5070: bf16

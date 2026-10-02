@@ -1,0 +1,25 @@
+# Raw experiment outputs and downloaded data
+runs/
+data/raw/
+logs/
+
+# Secrets
+.env
+
+# Environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
+
+# Task hand-off prompts (local only)
+docs/handoff/

@@ -1,0 +1,18 @@
+# Where to run. Select with --endpoint, or AGENTRIG_ENDPOINT, else `default`.
+# thinking_control: how this server turns Qwen3 thinking mode on/off
+#   reasoning_effort    -> sends reasoning_effort="none" when thinking is off (Ollama, verified 2026-10-02)
+#   chat_template_kwargs -> sends extra_body.chat_template_kwargs.enable_thinking (vLLM)
+default: ollama_mac
+
+endpoints:
+  ollama_mac:
+    platform: mac-ollama          # development / debugging only, not for formal experiments
+    base_url: http://localhost:11434/v1
+    api_key: ollama               # Ollama ignores the key, but the client requires one
+    thinking_control: reasoning_effort
+
+  vllm_5070:
+    platform: rtx5070-vllm        # formal experiments
+    base_url: ${VLLM_BASE_URL}    # Tailscale address, set in .env
+    api_key: ${VLLM_API_KEY:-EMPTY}
+    thinking_control: chat_template_kwargs

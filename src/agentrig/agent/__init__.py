@@ -1,0 +1,1 @@
+"""Hand-written agent core."""
