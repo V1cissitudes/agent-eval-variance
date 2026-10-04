@@ -57,7 +57,10 @@ def completed_run_ids(path: Path) -> set[str]:
     done = set()
     with open(path, encoding="utf-8") as f:
         for line in f:
-            rec = json.loads(line)
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # a line cut off by a crash or shutdown; that run is simply re-run
             if rec.get("error") is None:
                 done.add(rec["run_id"])
     return done

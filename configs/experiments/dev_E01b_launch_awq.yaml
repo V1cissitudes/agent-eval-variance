@@ -1,0 +1,24 @@
+# Launch-reproducibility check for E01a/E01b (exploratory, 2026-10-04): the greedy arm of the first 50
+# questions, in the same order and with the same seed base as E01a/E01b, on a freshly started server.
+# Compared run by run with the E01a/E01b greedy runs to see whether outputs are reproducible across
+# server launches. FP8/AWQ launch exactly as in E01b; the BF16 launch loads a different compiled graph
+# from E01a (docs/experiments/E01b_results.md). Serve FP8/AWQ with
+# --kv-blocks 1361 as in E01b. dev_ prefix: not read by the main analysis (01 skips dev_ folders).
+name: dev_E01b_launch
+endpoint: vllm_5070
+model: qwen3-4b-awq
+enable_thinking: false
+eval_set: data/frozen/hotpotqa_distractor_val_300.jsonl
+question_ids: []
+n_questions: 50
+max_steps: 8
+max_tokens_per_step: 1024
+search_top_k: 2
+seed: 20261003
+replicates_per_seed: 2
+arms:
+  - name: greedy
+    temperature: 0.0
+    top_p: 0.8
+    top_k: 20
+    n_repeats: 2

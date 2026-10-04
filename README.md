@@ -8,8 +8,8 @@ weight precision, inference-serving configuration (e.g. prefix caching), samplin
 The goal is a variance decomposition (mixed-effects models) and a practical answer to "how many repeats and
 how many questions do I need?" (power analysis / generalizability theory).
 
-> Status: **ongoing** (started Oct 2026). Infrastructure and agent are done; pilot experiments are in progress.
-> No findings yet.
+> Status: **ongoing** (started Oct 2026). Experiments E00–E01b (19,600 agent runs on Qwen3-4B) are complete;
+> a technical report is in preparation.
 
 ## What is here
 
@@ -83,6 +83,22 @@ make figures           # regenerate results/ and figures/ from runs/
 Prefix caching is a server setting: start vLLM with `scripts/serve_vllm.sh ... --prefix-cache on|off`
 and pass the same value to `run_experiment.py`.
 
+## Paired cache conditions
+
+With model weights already cached, inspect the complete plan first:
+
+```bash
+scripts/run_cache_pair.sh --dry-run configs/experiments/E01a_bf16.yaml
+scripts/run_cache_pair.sh configs/experiments/E01a_bf16.yaml --max-num-seqs 1 --max-num-batched-tokens 512
+```
+
+The script runs cache-on and cache-off in separate server/experiment tmux sessions, then restores
+cache-on. It refuses active experiments, verifies the actual server configuration, and waits for
+the port and GPU compute allocations to be released before restarting. Logs and exit statuses
+are kept under `logs/cache-pair_*`. A failed step keeps the scene intact; it never retries or
+deletes trajectories. Repeating the same configuration and serving settings resumes successful
+runs. Development dependencies are not synchronized, and serving uses cached weights only.
+
 ## Common commands
 
 ```bash
@@ -93,7 +109,25 @@ make figures     # regenerate results/ and figures/ from analysis/
 
 ## Findings
 
-_None yet._
+Qwen3-4B (BF16, FP8, INT4-AWQ) on vLLM 0.30, one RTX 5070, serial requests, 300 HotpotQA questions. Details,
+intervals and pre-registered tests are in `docs/experiments/E00_pilot.md`, `docs/experiments/E01a_results.md`
+and `docs/experiments/E01b_results.md` (in Chinese); exploratory results are marked as such there.
+
+- **Reproducibility.** With prefix caching off, same-seed replicates produced byte-identical model outputs at
+  every step in all 4,500 groups (three precisions, seeded sampling included), on a given server build. A launch that
+  loaded a different compiled model graph changed 20% of greedy trajectories (exploratory).
+- **Prefix caching.** With caching on, 3–8% of same-seed groups diverged in answer or actions, concentrated in each question's first,
+  recomputed run; quantization did not amplify this. The same request on a cache-off and a cache-on server gave
+  different greedy trajectories for 15–77% of questions, depending on precision (FP8 most, INT4 least).
+- **Variance.** Questions account for 84–100% of the exact-match variance; removing top-p/top-k truncation
+  raised the seed variance by 40–80% without changing accuracy.
+- **Precision.** INT4 was 3–5 points less accurate in every condition, but neither significantly different
+  (Holm) nor equivalent within ±3 points; about a third of the gap is one formatting failure (an inline
+  "Final Answer"). FP8 effects varied by decoding arm.
+- **How many runs.** For similar conditions, 3 runs on 300 questions detect a 3-point difference with power of
+  about 0.9; a single run on 100 questions reverses a true 3-point ranking in 10–14% of cases (2–6% if both
+  conditions use the same seeds). Between precisions the question × condition variance is 3–40 times larger:
+  extra runs barely help, and even 1,000 single-run questions give power of only about 0.7 for BF16 vs INT4.
 
 ## Notes
 

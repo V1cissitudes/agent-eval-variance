@@ -1,0 +1,31 @@
+# E01a: BF16 main experiment (docs/experiments/E01_design.md). Run once per prefix-cache setting:
+#   scripts/run_cache_pair.sh configs/experiments/E01a_bf16.yaml   (or run_experiment.py twice)
+# 300 questions x (greedy 2 + qwen 6 + topp1 6) runs = 4,200 runs per cache setting.
+name: E01a
+endpoint: vllm_5070
+model: qwen3-4b
+enable_thinking: false
+eval_set: data/frozen/hotpotqa_distractor_val_300.jsonl
+question_ids: []                  # empty -> first n_questions in frozen (hash) order
+n_questions: 300
+max_steps: 8
+max_tokens_per_step: 1024
+search_top_k: 2
+seed: 20261003                    # new seed base: E01 does not re-use E00's per-question seeds
+replicates_per_seed: 2            # same-seed replicates isolate serving-side nondeterminism
+arms:
+  - name: greedy                  # deterministic baseline; 1 seed x 2 replicates
+    temperature: 0.0
+    top_p: 0.8
+    top_k: 20
+    n_repeats: 2
+  - name: qwen                    # Qwen3 recommended non-thinking sampling; 3 seeds x 2 replicates
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    n_repeats: 6
+  - name: topp1                   # temperature-only sampling (no truncation); 3 seeds x 2 replicates
+    temperature: 0.7
+    top_p: 1.0
+    top_k: null
+    n_repeats: 6

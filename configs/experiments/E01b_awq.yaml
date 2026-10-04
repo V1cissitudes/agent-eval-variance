@@ -1,0 +1,26 @@
+# E01b precision ladder (docs/experiments/E01_design.md): awq arm. Same 300 questions, seed base and arm
+# settings as E01a (whose greedy and qwen arms are the BF16 level), so precisions are paired by question
+# and seed. Serve with --kv-blocks 1361 so prefix-cache capacity equals E01a's BF16 server (21,776 tokens).
+name: E01b
+endpoint: vllm_5070
+model: qwen3-4b-awq
+enable_thinking: false
+eval_set: data/frozen/hotpotqa_distractor_val_300.jsonl
+question_ids: []
+n_questions: 300
+max_steps: 8
+max_tokens_per_step: 1024
+search_top_k: 2
+seed: 20261003
+replicates_per_seed: 2
+arms:
+  - name: greedy
+    temperature: 0.0
+    top_p: 0.8
+    top_k: 20
+    n_repeats: 2
+  - name: qwen
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    n_repeats: 6

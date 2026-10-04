@@ -1,0 +1,37 @@
+"experiment","model","term","estimate","se"
+"E00_pilot","LMM (primary)","(Intercept)",0.625000000015716,0.0758575553010145
+"E00_pilot","LMM (primary)","temperature0.7",-0.0250000000002609,0.0259012815335448
+"E00_pilot","LMM (primary)","prefix_cacheon",-0.00250000000023232,0.0259012815335448
+"E00_pilot","LMM (primary)","temperature0.7:prefix_cacheon",-4.56885170252166e-14,0.0366299436275807
+"E00_pilot","logit GLMM (sensitivity)","(Intercept)",19.7136484041879,5.03570730037108
+"E00_pilot","logit GLMM (sensitivity)","temperature0.7",-5.47298533718415,4.31875125903152
+"E00_pilot","logit GLMM (sensitivity)","prefix_cacheon",2.82517353149983,2.6619292787221
+"E00_pilot","logit GLMM (sensitivity)","temperature0.7:prefix_cacheon",-1.84491596192491,4.13446498652072
+"E01a","LMM (primary)","(Intercept)",0.513333333305871,0.0288313456455594
+"E01a","LMM (primary)","armqwen",-0.0111111111046468,0.0109984556718382
+"E01a","LMM (primary)","armtopp1",-0.0111111111046595,0.0109984556718382
+"E01a","LMM (primary)","prefix_cacheon",-0.00833333332594528,0.0134703021773119
+"E01a","LMM (primary)","armqwen:prefix_cacheon",0.0138888888811297,0.0155541651762734
+"E01a","LMM (primary)","armtopp1:prefix_cacheon",0.0116666666589204,0.0155541651762735
+"E01a","logit GLMM (sensitivity)","(Intercept)",26.7247243174388,2.7412806192594
+"E01a","logit GLMM (sensitivity)","armqwen",-13.1433719279817,2.40218655217739
+"E01a","logit GLMM (sensitivity)","armtopp1",-13.1018884796632,2.48523216612925
+"E01a","logit GLMM (sensitivity)","prefix_cacheon",-12.8324517709699,2.86965365184812
+"E01a","logit GLMM (sensitivity)","armqwen:prefix_cacheon",18.8899225602763,4.25279714352747
+"E01a","logit GLMM (sensitivity)","armtopp1:prefix_cacheon",18.5900898125756,4.40658222386475
+"E01b","LMM (primary)","(Intercept)",0.476666666653972,0.028800658212676
+"E01b","LMM (primary)","precisionint4_awq_w4a16_g128",-0.0133333333266002,0.0184067158495206
+"E01b","LMM (primary)","armqwen",0.041111111116799,0.0166807355399645
+"E01b","LMM (primary)","prefix_cacheon",0.00500000000677944,0.0184067158495206
+"E01b","LMM (primary)","precisionint4_awq_w4a16_g128:armqwen",-0.0433333333391306,0.0235901224309739
+"E01b","LMM (primary)","precisionint4_awq_w4a16_g128:prefix_cacheon",0.00499999999212485,0.0260310271931329
+"E01b","LMM (primary)","armqwen:prefix_cacheon",-0.0233333333390729,0.0235901224309739
+"E01b","LMM (primary)","precisionint4_awq_w4a16_g128:armqwen:prefix_cacheon",0.0255555555610955,0.033361471079918
+"E01b","logit GLMM (sensitivity)","(Intercept)",-20.1775686477616,3.3759284668639
+"E01b","logit GLMM (sensitivity)","precisionint4_awq_w4a16_g128",-2.46187321749558,3.81882780006746
+"E01b","logit GLMM (sensitivity)","armqwen",7.07887731140663,3.33672085263529
+"E01b","logit GLMM (sensitivity)","prefix_cacheon",3.83834307882414,3.8149491029627
+"E01b","logit GLMM (sensitivity)","precisionint4_awq_w4a16_g128:armqwen",-13.0542079316905,3.65218703911904
+"E01b","logit GLMM (sensitivity)","precisionint4_awq_w4a16_g128:prefix_cacheon",-3.03535496128134,3.91303734895014
+"E01b","logit GLMM (sensitivity)","armqwen:prefix_cacheon",-4.08309573411823,3.9260799291926
+"E01b","logit GLMM (sensitivity)","precisionint4_awq_w4a16_g128:armqwen:prefix_cacheon",11.2599871075259,4.50006187919873

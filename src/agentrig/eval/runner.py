@@ -39,19 +39,38 @@ def git_state() -> dict[str, Any]:
 
 
 def expand_conditions(cfg: dict[str, Any], prefix_cache: str) -> list[dict[str, Any]]:
-    """Cross temperatures x thinking settings; prefix cache is fixed per server run."""
-    temps = cfg.get("temperatures", [0.0])
-    thinking = cfg.get("enable_thinking", False)
-    thinking_list = thinking if isinstance(thinking, list) else [thinking]
-    return [
-        {"temperature": t, "enable_thinking": th, "prefix_cache": prefix_cache}
-        for t, th in itertools.product(temps, thinking_list)
-    ]
+    """One condition per arm. `arms` (optional) lists named settings that override top-level
+    defaults; without it, temperatures x thinking settings are crossed (arm "default").
+    Prefix cache is fixed per server run, so it comes from the command line."""
+    base = {
+        "enable_thinking": cfg.get("enable_thinking", False),
+        "top_p": cfg.get("top_p", 1.0),
+        "top_k": cfg.get("top_k"),
+        "max_tokens_per_step": cfg.get("max_tokens_per_step", 1024),
+        "n_repeats": cfg["n_repeats"] if "n_repeats" in cfg else 1,
+        "replicates_per_seed": cfg.get("replicates_per_seed", 1),
+    }
+    if "arms" in cfg:
+        arms = [{**base, **arm} for arm in cfg["arms"]]
+    else:
+        thinking = base["enable_thinking"]
+        thinking_list = thinking if isinstance(thinking, list) else [thinking]
+        arms = [
+            {**base, "name": "default", "temperature": t, "enable_thinking": th}
+            for t, th in itertools.product(cfg.get("temperatures", [0.0]), thinking_list)
+        ]
+    conditions = []
+    for arm in arms:
+        settings = dict(arm)
+        name = settings.pop("name")
+        conditions.append({**settings, "arm": name, "prefix_cache": prefix_cache})
+    return conditions
 
 
 def condition_key(cond: dict[str, Any]) -> str:
     think = "on" if cond["enable_thinking"] else "off"
-    return f"T{cond['temperature']}_think-{think}_cache-{cond['prefix_cache']}"
+    prefix = "" if cond.get("arm", "default") == "default" else f"{cond['arm']}_"
+    return f"{prefix}T{cond['temperature']}_think-{think}_cache-{cond['prefix_cache']}"
 
 
 def select_questions(cfg: dict[str, Any], limit: int | None) -> list[dict[str, Any]]:
@@ -77,9 +96,9 @@ def run_one(
     def llm(messages: list[dict[str, str]], step: int):  # noqa: ANN202
         sampling = Sampling(
             temperature=cond["temperature"],
-            top_p=ctx["cfg"].get("top_p", 1.0),
-            top_k=ctx["cfg"].get("top_k"),
-            max_tokens=ctx["cfg"].get("max_tokens_per_step", 1024),
+            top_p=cond["top_p"],
+            top_k=cond["top_k"],
+            max_tokens=cond["max_tokens_per_step"],
             seed=run_seed + step,
         )
         request = build_request(
@@ -99,12 +118,16 @@ def build_condition_record(cond: dict[str, Any], ctx: dict[str, Any]) -> dict[st
         "model": cfg["model"],
         "served_model": ctx["served"],
         "precision": ctx["model_cfg"].get("precision", {}).get(endpoint.name),
-        "top_p": cfg.get("top_p", 1.0),
-        "top_k": cfg.get("top_k"),
-        "max_tokens_per_step": cfg.get("max_tokens_per_step", 1024),
         "max_steps": cfg["max_steps"],
         "search_top_k": cfg.get("search_top_k", 2),
     }
+
+
+def check_served_model(client: Any, served: str) -> None:
+    """Refuse to run against a server that hosts a different model (e.g. FP8 config vs BF16)."""
+    hosted = [m.id for m in client.models.list().data]
+    if served not in hosted:
+        raise SystemExit(f"Server hosts {hosted}, but the config expects {served!r}")
 
 
 def run_experiment(
@@ -123,20 +146,23 @@ def run_experiment(
         "served": model_cfg["served_names"][endpoint.name],
         "client": make_client(endpoint),
     }
-    out = ROOT / "runs" / cfg["name"] / f"{endpoint.name}__cache-{prefix_cache}.jsonl"
+    check_served_model(ctx["client"], ctx["served"])
+    out = (
+        ROOT / "runs" / cfg["name"] / f"{endpoint.name}__{cfg['model']}__cache-{prefix_cache}.jsonl"
+    )
     done = completed_run_ids(out)
     meta_base = {"git": git_state(), "prompt_version": PROMPT_VERSION, "agentrig": __version__}
     questions = select_questions(cfg, limit)
     for cond in expand_conditions(cfg, prefix_cache):
         cond_record = build_condition_record(cond, ctx)
         key = condition_key(cond)
-        for q, repeat in itertools.product(questions, range(cfg["n_repeats"])):
-            run_id = f"{cfg['name']}/{endpoint.name}/{key}/{q['id']}/r{repeat:02d}"
+        for q, repeat in itertools.product(questions, range(cond["n_repeats"])):
+            run_id = f"{cfg['name']}/{endpoint.name}/{cfg['model']}/{key}/{q['id']}/r{repeat:02d}"
             if run_id in done:
                 continue
             # replicates_per_seed > 1 reuses a seed: differences between same-seed replicates
             # isolate serving-side nondeterminism from sampling variance (analysis_plan.md)
-            seed_index, replicate = divmod(repeat, cfg.get("replicates_per_seed", 1))
+            seed_index, replicate = divmod(repeat, cond["replicates_per_seed"])
             run_seed = derive_seed(cfg["seed"], q["id"], seed_index)
             meta = {**meta_base, "seed_index": seed_index, "replicate": replicate}
             record = execute(run_id, q, repeat, cond, cond_record, run_seed, ctx, meta)

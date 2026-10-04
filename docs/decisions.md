@@ -30,3 +30,20 @@
 2026-10-03 | 主结局 EM（F1 为次结局）；主模型为线性混合模型（EM 作 0/1 线性概率），logit GLMM 作敏感性分析 | Q2 关心的是观测尺度上准确率的标准误，线性模型的方差成分可直接用于 D-study；GLMM 复核方向 | docs/experiments/analysis_plan.md
 2026-10-03 | 统计分析用 R（lme4 / glmmTMB），Mac 上用 Homebrew 安装；make figures 同时运行 analysis/NN_*.R | 交叉 + 嵌套随机效应在 R 中最成熟 | docs/experiments/analysis_plan.md
 2026-10-03 | "可靠"的主定义：同一组题上两个条件相差 3 个百分点时功效 0.8（α=0.05）；同时报告标准误随 (题数, 重复次数) 的曲线和排序翻转概率 | 3pp 约为常见"有意义改进"的下限；2pp 所需样本超出单卡算力；排序翻转概率可与 2602.11619 的 29.3% 直接对比 | docs/experiments/analysis_plan.md
+
+2026-10-03 | 对外发布采用审查通过的快照和独立的单一初始提交；开发仓库保留完整历史 | 发布内容与已审查清单逐文件一致，后续开发独立进行 | 发布流程
+2026-10-03 | E01 分两阶段：E01a = BF16 × 300 题 × 缓存{开,关} × 实验臂{greedy 2 次, qwen 6 次, topp1 6 次}（8,400 次运行）；E01b = 精度阶梯，每个精度 greedy + qwen × 缓存{开,关}（档位在可行性调研后确定） | E00 显示方差主要在题目间、温度 0.7 下 3–5 次重复能明显提高功效；分阶段让每阶段一晚内跑完 | docs/experiments/E01_design.md
+2026-10-03 | 方差成分 CI 改用按题目重抽样的 bootstrap；比较条件的 D-study 改为按具体对比估计交互方差 | EM 为 0/1 且大量题目全对或全错，参数 bootstrap 的正态假设不成立；具体对比的交互方差比合并估计更贴合 Q2 | docs/experiments/analysis_plan.md 第 6 节修订
+2026-10-03 | 缓存对照通过配对脚本先运行 on 再 off，成功后恢复 on；任何失败保留现场、不自动重试或恢复 | 开关以真实服务配置核验，避免把未完成或条件不符的结果继续用于下一轮 | scripts/run_cache_pair.sh
+
+
+2026-10-03 | 精度阶梯定为 BF16 / FP8（Qwen/Qwen3-4B-FP8）/ INT4（Qwen/Qwen3-4B-AWQ），全部在 5070 上；E01b 用与 E01a 相同的种子基数，BF16 复用 E01a 数据 | 官方提供的量化版本只有 FP8 与 AWQ；同种子使精度比较在题目和种子上配对 | docs/experiments/E01_design.md
+2026-10-03 | H4 增加 TOST 等价检验（界限 ±3 个百分点，Holm 校正） | "不显著"不能证明"没变化"（参照 2607.27275）；界限与"可靠"的定义（3 pp）一致 | docs/experiments/E01_design.md
+
+2026-10-03 | 官方 FP8 在本机验证使用 VLLM_USE_DEEP_GEMM=0 的 CUTLASS block-FP8 路径，保留 BF16 非量化层和 KV；FP8 模型通过端点验证 | 默认 DeepGEMM 找不到 CUDA toolkit，CUTLASS 两项端点检查 PASS；无需安装工具链 | docs/experiments/E01_design.md 偏离记录
+
+2026-10-03 | E01b 的 FP8 / INT4 服务固定 KV cache 为 1,361 块（21,776 token，--kv-blocks / --num-gpu-blocks-override），与 E01a 的 BF16 服务相同 | 不固定时容量随权重变小而增大（BF16 21.8k、FP8 41.3k、AWQ 58.6k token），前缀缓存的命中与淘汰会随精度变化，与 H3 的精度效应混淆 | 2026-10-03 晚实测；E01_design.md 偏离记录
+2026-10-03 | AWQ 服务用 --dtype bfloat16（与 BF16、FP8 一致），Marlin 内核；两项 check_endpoint 通过 | 本机 AutoAWQ 支持 BF16 激活，统一 dtype 避免非量化层精度不同 | 端点验证原始响应（不公开）；docs/experiments/E01_design.md
+2026-10-04 | E01a、E01b 结论确认，包括两条探索性发现：缓存开关会改变 15–77% 题目的贪心轨迹（随精度而异，属确定性计算路径效应）；逐字复现需要同一个 vLLM 编译产物 | 跨启动补测：同一编译产物 FP8/AWQ 100/100 相同，BF16 换编译产物后缓存关 10/50 题不同 | docs/experiments/E01a_results.md、E01b_results.md
+2026-10-04 | 解析器：项目一保持 react-v1 的严格行首格式（Final Answer / Action 须在行首）作为主结局，不改；宽松解析（接受行内 "Final Answer:"）的反事实 EM 作为每次分析的标准敏感性输出；项目二设计时再定 | 改解析器等于改 agent（回合会提前结束），已有 19,600 次运行不可比；反事实在第一次格式错误处精确成立，已能给出影响大小（AWQ 差距约三成） | E01b_results.md 探索性发现 1
+2026-10-04 | 复现约定：同一组对比的所有条件使用同一条启动命令（含 served-model-name、模型路径写法、kv-blocks）；实验记录保存完整启动命令和 vLLM 编译缓存哈希（torch_compile_cache） | 启动命令变化会换编译产物、改变输出，与打开缓存的影响同一量级 | E01b_results.md 探索性发现 3
